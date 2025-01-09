@@ -1,14 +1,19 @@
 # Define the service name you want to check
 $serviceName = "SECURA" # Replace with the name of your service
 
+Write-Output "Checking if the service '$serviceName' is installed..."
+
 # Check if Secura is installed
-$CheckSecura = Get-Service -Name $serviceName
+$CheckSecura = Get-Service -Name $serviceName -ErrorAction SilentlyContinue
 If ($CheckSecura) {
-    Write-Output "Still present, skip remediation"
+    Write-Output "Service '$serviceName' is still present, skipping remediation."
 } else {
+    Write-Output "Service '$serviceName' is not present. Starting remediation process..."
+
     # Remove Folders for DataCard
     $CleanupFolders = @("C:\CMCONFIG", "C:\KEYFILE", "C:\ProgramData\Entrust", "C:\ProgramData\EntrustDataCard", "C:\Program Files\Datacard", "C:\Program Files (x86)\Acuant")
     foreach ($folder in $CleanupFolders) {
+        Write-Output "Checking if folder '$folder' exists..."
         # Check if the folder exists
         if (Test-Path $folder) {
             try {
@@ -27,12 +32,15 @@ If ($CheckSecura) {
     # Define the folder name to remove from each user's AppData\Roaming directory
     $folderToRemove = "Datacard"
 
+    Write-Output "Starting cleanup of user profiles..."
+
     # Get all user profiles from the system (excluding system profiles)
     $userProfiles = Get-WmiObject -Class Win32_UserProfile | Where-Object { $_.Special -eq $false -and $_.LocalPath -like "C:\Users\*" }
     foreach ($profile in $userProfiles) {
         # Construct the path to the folder inside each user's AppData\Roaming directory
         $folderPath = Join-Path -Path $profile.LocalPath -ChildPath "AppData\Roaming\$folderToRemove"
 
+        Write-Output "Checking if folder '$folderPath' exists for user profile '$($profile.LocalPath)'..."
         # Check if the folder exists
         if (Test-Path $folderPath) {
             try {
@@ -46,11 +54,12 @@ If ($CheckSecura) {
             Write-Output "Folder does not exist: $folderPath"
         }
     }
-    Write-Output "Cleanup process completed."
+    Write-Output "User profile cleanup process completed."
 
     # Define the registry key path
     $regKeyPath = "HKLM:\SYSTEM\CurrentControlSet\Services\SECURA"
 
+    Write-Output "Checking if registry key '$regKeyPath' exists..."
     # Check if the registry key exists
     if (Test-Path $regKeyPath) {
         try {

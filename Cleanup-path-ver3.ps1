@@ -10,6 +10,10 @@ If ($CheckSecura) {
 } else {
     Write-Output "Service '$serviceName' is not present. Starting remediation process..."
 
+    # Initialize counters
+    $totalFoldersRemoved = 0
+    $totalFilesRemoved = 0
+
     # Remove Folders for DataCard
     $CleanupFolders = @("C:\CMCONFIG", "C:\KEYFILE", "C:\ProgramData\Entrust", "C:\ProgramData\EntrustDataCard", "C:\Program Files\Datacard", "C:\Program Files (x86)\Acuant")
     foreach ($folder in $CleanupFolders) {
@@ -17,6 +21,12 @@ If ($CheckSecura) {
         # Check if the folder exists
         if (Test-Path $folder) {
             try {
+                # Count files and folders before removal
+                $files = Get-ChildItem -Path $folder -Recurse -File -ErrorAction SilentlyContinue
+                $folders = Get-ChildItem -Path $folder -Recurse -Directory -ErrorAction SilentlyContinue
+                $totalFilesRemoved += $files.Count
+                $totalFoldersRemoved += $folders.Count + 1 # Including the root folder
+
                 # Remove the folder and its contents
                 Remove-Item -Path $folder -Recurse -Force
                 Write-Output "Removed folder: $folder"
@@ -44,6 +54,12 @@ If ($CheckSecura) {
         # Check if the folder exists
         if (Test-Path $folderPath) {
             try {
+                # Count files and folders before removal
+                $files = Get-ChildItem -Path $folderPath -Recurse -File -ErrorAction SilentlyContinue
+                $folders = Get-ChildItem -Path $folderPath -Recurse -Directory -ErrorAction SilentlyContinue
+                $totalFilesRemoved += $files.Count
+                $totalFoldersRemoved += $folders.Count + 1 # Including the root folder
+
                 # Remove the folder and its contents
                 Remove-Item -Path $folderPath -Recurse -Force
                 Write-Output "Removed folder: $folderPath"
@@ -73,4 +89,8 @@ If ($CheckSecura) {
         Write-Output "Registry key does not exist: $regKeyPath"
     }
     Write-Output "Registry key removal process completed."
+
+    # Output the total number of files and folders removed
+    Write-Output "Total folders removed: $totalFoldersRemoved"
+    Write-Output "Total files removed: $totalFilesRemoved"
 }
